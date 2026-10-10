@@ -7,6 +7,9 @@ import os
 import random
 import secrets
 import sqlite3
+import io
+import base64
+import qrcode
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -264,7 +267,14 @@ def main():
         for r in run_report(conn, name):
             print("  ", dict(r))
     conn.close()
-
+def generate_qr(data):
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8"
 
 if __name__ == "__main__":
     main()
