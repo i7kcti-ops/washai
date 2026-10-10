@@ -275,7 +275,5 @@ def generate_qr(data):
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
-    return base64.b64encode(buffer.getvalue()).decode("utf-8"
-
 if __name__ == "__main__":
     main()
