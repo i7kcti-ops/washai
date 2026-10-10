@@ -47,7 +47,10 @@ def rows(cursor_rows):
 @app.get("/")
 def home():
     return send_from_directory(app.static_folder, "index.html")
-
+@app.get("/api/qr/<path:data>")
+def get_qr_code(data):
+    qr_base64 = washai.generate_qr(data)
+    return jsonify(qr_code=qr_base64)
 
 @app.get("/api/health")
 def health():
@@ -172,6 +175,13 @@ def report(name):
     conn.close()
     return jsonify(data)
 
-
+def generate_qr(data):
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
 if __name__ == "__main__":
     app.run(debug=True)
