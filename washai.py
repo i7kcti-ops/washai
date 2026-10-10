@@ -274,6 +274,7 @@ def generate_qr(data):
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
     return base64.b64encode(buffer.getvalue()).decode("utf-8"
 
 if __name__ == "__main__":
