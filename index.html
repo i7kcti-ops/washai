@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WashAI</title>
+<style>
+:root{--bg:#F6F9FA;--surface:#fff;--ink:#14283B;--muted:#52667A;--line:#D5E0E6;--deep:#1B4D6B;--mark:#D9482B;--ok:#1d7a52;
+  --f:'Segoe UI',Tahoma,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1C29;--surface:#15293A;--ink:#E8F0F4;--muted:#9DB2C2;--line:#26425A;--deep:#2b7aa6;--mark:#F0694C;--ok:#4cc38a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);line-height:1.7;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:10px 0 2px} h1 b{color:var(--mark)}
+h2{font-size:19px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 16px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button{flex:1;padding:10px;border-radius:999px;border:1.5px solid var(--line);background:none;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--deep);color:#fff;border-color:var(--deep)}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:14px;color:var(--muted);margin:8px 0 2px}
+input{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{margin-top:12px;padding:10px 20px;border:0;border-radius:999px;background:var(--mark);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.btn.alt{background:var(--deep)}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--line)}
+.msg{margin-top:12px;padding:10px 14px;border-radius:12px;background:var(--bg);border:1.5px dashed var(--line);white-space:pre-wrap}
+.err{color:var(--mark);border-color:var(--mark)}
+.steps{display:flex;gap:6px;margin:10px 0}.steps span{flex:1;height:6px;border-radius:3px;background:var(--line)}.steps span.on{background:var(--mark)}
+.svc{display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:center;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right}
+.scroll{overflow-x:auto}
+.peak{color:var(--mark);font-weight:700}
+.codes{direction:ltr;text-align:left;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.hidden{display:none}
+.chat{max-height:240px;overflow-y:auto;display:grid;gap:6px;margin:8px 0}
+.chat span{padding:6px 12px;border-radius:12px;max-width:85%}
+.chat .u{background:var(--deep);color:#fff;justify-self:start}.chat .b{background:var(--bg);border:1px solid var(--line);justify-self:end}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Wash<b>AI</b></h1>
+  <p class="sub">نظام ذكي لإدارة المغاسل</p>
+  <div class="tabs">
+    <button id="t1" class="on" type="button">للعميل</button>
+    <button id="t2" type="button">للإدارة</button>
+  </div>
+
+  <!-- CUSTOMER -->
+  <div id="p1">
+    <div class="card">
+      <h2>تتبع طلبك</h2>
+      <div class="row">
+        <div><label for="c-id">رقم الطلب</label><input id="c-id" inputmode="numeric"></div>
+        <div><label for="c-phone">رقم جوالك</label><input id="c-phone" inputmode="tel"></div>
+      </div>
+      <button class="btn" id="track" type="button">تتبع</button>
+      <div id="track-out"></div>
+    </div>
+    <div class="card">
+      <h2>اسأل المساعد</h2>
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <input id="chat-in" placeholder="مثال: وين طلبي؟ / بكم الثوب؟ / متى دوامكم؟">
+      <button class="btn alt" id="send" type="button">إرسال</button>
+      <p class="sub" style="margin:8px 0 0;font-size:13px">للسؤال عن طلبك اكتب رقم جوالك في خانة التتبع فوق.</p>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="p2" class="hidden">
+    <div class="card">
+      <h2>دخول الإدارة</h2>
+      <label for="key">مفتاح الإدارة</label>
+      <input id="key" type="password" autocomplete="off">
+      <p class="sub" style="margin:6px 0 0;font-size:13px">في النسخة التجريبية المفتاح الافتراضي: demo</p>
+    </div>
+
+    <div class="card">
+      <h2>طلب جديد</h2>
+      <div class="row">
+        <div><label for="a-name">اسم العميل</label><input id="a-name"></div>
+        <div><label for="a-phone">الجوال</label><input id="a-phone" inputmode="tel"></div>
+      </div>
+      <label>القطع</label>
+      <div id="svc"></div>
+      <button class="btn" id="create" type="button">إنشاء الطلب</button>
+      <div id="create-out"></div>
+    </div>
+
+    <div class="card">
+      <h2>تحديث حالة طلب</h2>
+      <label for="adv-id">رقم الطلب</label><input id="adv-id" inputmode="numeric">
+      <button class="btn alt" id="adv" type="button">انقله للمرحلة اللي بعدها</button>
+      <label for="scan-code">أو امسح رمز قطعة</label><input id="scan-code" dir="ltr" placeholder="WA-XXXXXXXX">
+      <button class="btn ghost" id="scan" type="button">بحث</button>
+      <div id="adv-out"></div>
+    </div>
+
+    <div class="card">
+      <h2>توقع الطلب وخطة الموظفين</h2>
+      <button class="btn alt" id="fc" type="button">اعرض توقع الأسبوع</button>
+      <div id="fc-out"></div>
+    </div>
+
+    <div class="card">
+      <h2>التقارير</h2>
+      <button class="btn ghost" data-r="top_services" type="button">أكثر الخدمات</button>
+      <button class="btn ghost" data-r="top_customers" type="button">أفضل العملاء</button>
+      <button class="btn ghost" data-r="late_orders" type="button">الطلبات المتأخرة</button>
+      <button class="btn ghost" data-r="low_inventory" type="button">المخزون</button>
+      <div id="rep-out"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUS={received:'استلمناه',washing:'في الغسيل الحين',ready:'جاهز للاستلام',delivered:'انسلّم'};
+const FLOW=['received','washing','ready','delivered'];
+const $=id=>document.getElementById(id);
+
+function show(box,text,isErr){box.replaceChildren();const d=document.createElement('div');d.className='msg'+(isErr?' err':'');d.textContent=text;box.appendChild(d);}
+async function api(path,opt={},admin=false){
+  opt.headers=Object.assign({'Content-Type':'application/json'},opt.headers||{});
+  if(admin)opt.headers['X-Admin-Key']=$('key').value;
+  const r=await fetch(path,opt);let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.error||'صار خطأ، حاول مرة ثانية');
+  return j;
+}
+function table(rows,cols){
+  const w=document.createElement('div');w.className='scroll';const t=document.createElement('table');
+  const hr=t.insertRow();cols.forEach(c=>{const th=document.createElement('th');th.textContent=c[1];hr.appendChild(th)});
+  rows.forEach(r=>{const tr=t.insertRow();cols.forEach(c=>{const td=tr.insertCell();td.textContent=r[c[0]];if(r.peak&&c[0]==='name')td.className='peak'})});
+  w.appendChild(t);return w;
+}
+
+// tabs
+$('t1').onclick=()=>{$('p1').classList.remove('hidden');$('p2').classList.add('hidden');$('t1').classList.add('on');$('t2').classList.remove('on')};
+$('t2').onclick=()=>{$('p2').classList.remove('hidden');$('p1').classList.add('hidden');$('t2').classList.add('on');$('t1').classList.remove('on')};
+
+// customer: track
+$('track').onclick=async()=>{
+  const out=$('track-out');
+  try{
+    const j=await api(`/api/track?order_id=${encodeURIComponent($('c-id').value)}&phone=${encodeURIComponent($('c-phone').value)}`);
+    out.replaceChildren();
+    const m=document.createElement('div');m.className='msg';
+    m.textContent=`هلا ${j.order.name}، طلبك #${j.order.id} ${STATUS[j.order.status]}\nالموعد المتوقع: ${j.order.due_at.slice(0,10)}\nالمجموع: ${j.order.total} ريال`;
+    out.appendChild(m);
+    const s=document.createElement('div');s.className='steps';
+    FLOW.forEach((f,i)=>{const sp=document.createElement('span');if(i<=FLOW.indexOf(j.order.status))sp.className='on';s.appendChild(sp)});
+    out.appendChild(s);
+  }catch(e){show(out,e.message,true)}
+};
+
+// customer: chat
+function bubble(cls,text){const s=document.createElement('span');s.className=cls;s.textContent=text;$('chat').appendChild(s);$('chat').scrollTop=1e6}
+$('send').onclick=async()=>{
+  const text=$('chat-in').value.trim();if(!text)return;
+  bubble('u',text);$('chat-in').value='';
+  try{const j=await api('/api/chat',{method:'POST',body:JSON.stringify({phone:$('c-phone').value,message:text})});bubble('b',j.reply)}
+  catch(e){bubble('b',e.message)}
+};
+$('chat-in').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click()});
+
+// admin: services list
+(async()=>{
+  try{const list=await api('/api/services');
+    list.forEach(s=>{const row=document.createElement('div');row.className='svc';
+      const l=document.createElement('span');l.textContent=`${s.name} (${s.price} ريال)`;
+      const i=document.createElement('input');i.type='number';i.min='0';i.value='0';i.dataset.name=s.name;i.setAttribute('aria-label',s.name);
+      row.append(l,i);$('svc').appendChild(row)});
+  }catch(e){}
+})();
+
+$('create').onclick=async()=>{
+  const pieces={};document.querySelectorAll('#svc input').forEach(i=>{if(+i.value>0)pieces[i.dataset.name]=+i.value});
+  try{
+    const j=await api('/api/orders',{method:'POST',body:JSON.stringify({name:$('a-name').value,phone:$('a-phone').value,pieces})},true);
+    const out=$('create-out');out.replaceChildren();
+    const m=document.createElement('div');m.className='msg';m.textContent=`تم إنشاء الطلب #${j.order_id}\nرموز QR للقطع:`;
+    const c=document.createElement('div');c.className='codes';c.textContent=j.qr_codes.join('\n');c.style.whiteSpace='pre-wrap';
+    m.appendChild(c);out.appendChild(m);
+  }catch(e){show($('create-out'),e.message,true)}
+};
+
+$('adv').onclick=async()=>{
+  try{const j=await api(`/api/orders/${encodeURIComponent($('adv-id').value)}/advance`,{method:'POST'},true);
+    show($('adv-out'),`الطلب #${j.order_id} صار: ${STATUS[j.status]}`)}
+  catch(e){show($('adv-out'),e.message,true)}
+};
+$('scan').onclick=async()=>{
+  try{const j=await api(`/api/scan/${encodeURIComponent($('scan-code').value.trim())}`,{},true);
+    show($('adv-out'),`القطعة: ${j.service}\nالطلب: #${j.order_id}\nالعميل: ${j.customer}\nالحالة: ${STATUS[j.status]}`)}
+  catch(e){show($('adv-out'),e.message,true)}
+};
+
+$('fc').onclick=async()=>{
+  const out=$('fc-out');
+  try{const j=await api('/api/forecast',{},true);out.replaceChildren();
+    out.appendChild(table(j.plan.map(p=>({...p,peak:p.peak,note:p.peak?'ذروة':''})),[['name','اليوم'],['orders','طلبات متوقعة'],['workers','موظفين'],['note','ملاحظة']]));
+    const m=document.createElement('div');m.className='msg';
+    m.textContent=`متوسط الخطأ: نموذجنا ${j.mae_model} مقابل الطريقة البسيطة ${j.mae_naive} (طلب/يوم)`;out.appendChild(m);
+  }catch(e){show(out,e.message,true)}
+};
+
+document.querySelectorAll('[data-r]').forEach(b=>b.onclick=async()=>{
+  const out=$('rep-out');
+  try{const rows=await api('/api/reports/'+b.dataset.r,{},true);
+    if(!rows.length){show(out,'ما فيه نتائج');return}
+    out.replaceChildren();out.appendChild(table(rows,Object.keys(rows[0]).map(k=>[k,k])));
+  }catch(e){show(out,e.message,true)}
+});
+</script>
+</body>
+</html>
